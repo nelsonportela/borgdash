@@ -2,14 +2,14 @@ services:
   backend:
     image: fuguone/borgdash-backend:latest
     container_name: borgdash-backend
+    env_file: .env
     ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=sqlite:///./data/borgdash.db
-      - ENVIRONMENT=production
+      - "8157:8000"
     volumes:
-      - ./data:/app/data
-      - ./ssh_keys:/app/ssh_keys
+
+      - /docker/config/borgdash:/app/data
+      - ./ssh_keys/id_rsa:/app/host_keys/ssh_key:ro  # ssh keys
+      - ./data/source:/app/source:ro                 # data to backup (can add multiple lines)
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     healthcheck:
@@ -22,8 +22,9 @@ services:
   frontend:
     image: fuguone/borgdash-frontend:latest
     container_name: borgdash-frontend
+    env_file: .env
     ports:
-      - "3000:80"
+      - "3157:80"
     depends_on:
       - backend
     restart: unless-stopped
