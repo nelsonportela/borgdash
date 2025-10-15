@@ -1,0 +1,49 @@
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: borgdash-backend
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=sqlite:///./data/borgdash.db
+      - SSH_KEY_DIR=/app/ssh_keys
+      - BORG_BINARY=borg
+      - BORG_REMOTE_PATH=borg-1.4
+      - SECRET_KEY=${SECRET_KEY:-change-this-secret-key-in-production}
+    volumes:
+      - /home/nelson:/app/sources:ro
+      - borgdash_data:/app/data
+      - ~/.ssh/id_rsa:/app/host_keys/ssh_key:ro
+    ports:
+      - "8157:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://192.168.1.100:8157
+    container_name: borgdash-frontend
+    ports:
+      - "3157:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  borgdash_data:
+    driver: local
+  borgdash_ssh_keys:
+    driver: local
+
+networks:
+  default:
+    name: borgdash_network
