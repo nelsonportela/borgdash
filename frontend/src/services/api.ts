@@ -1,8 +1,9 @@
 // Base API client for BorgDash
 import axios, { AxiosResponse, AxiosError } from 'axios';
 
-// API Configuration
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8157';
+// API Configuration - Use relative URLs for single-container deployment
+// This works from any hostname/IP since frontend and backend are on same origin
+const API_BASE_URL = '/api';
 
 // Create axios instance
 export const apiClient = axios.create({

@@ -1,29 +1,55 @@
-services:
+version: '3.8'services:
+
   backend:
-    image: fuguone/borgdash-backend:latest
-    container_name: borgdash-backend
-    env_file: .env
-    ports:
-      - "8157:8000"
-    volumes:
 
-      - /docker/config/borgdash:/app/data
-      - ./ssh_keys/id_rsa:/app/host_keys/ssh_key:ro  # ssh keys
-      - ./data/source:/app/source:ro                 # data to backup (can add multiple lines)
-      - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
+services:    image: fuguone/borgdash-backend:latest
+
+  borgdash:    container_name: borgdash-backend
+
+    image: fuguone/borgdash:latest    env_file: .env
+
+    container_name: borgdash    ports:
+
+    ports:      - "8157:8000"
+
+      - "3157:8000"  # Single port for both frontend and API    volumes:
+
+    environment:
+
+      - DATABASE_URL=sqlite:///./data/borgdash.db      - /docker/config/borgdash:/app/data
+
+      - ENVIRONMENT=production      - ./ssh_keys/id_rsa:/app/host_keys/ssh_key:ro  # ssh keys
+
+    volumes:      - ./data/source:/app/source:ro                 # data to backup (can add multiple lines)
+
+      - ./data:/app/data      - /etc/localtime:/etc/localtime:ro
+
+      - ./ssh_keys:/app/host_keys    restart: unless-stopped
+
+      - /etc/localtime:/etc/localtime:ro    healthcheck:
+
+    restart: unless-stopped      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+
+    healthcheck:      interval: 30s
+
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]      timeout: 10s
+
+      interval: 30s      retries: 3
+
+      timeout: 10s      start_period: 40s
+
       retries: 3
-      start_period: 40s
 
-  frontend:
+      start_period: 40s  frontend:
+
     image: fuguone/borgdash-frontend:latest
-    container_name: borgdash-frontend
-    env_file: .env
-    ports:
+
+networks:    container_name: borgdash-frontend
+
+  default:    env_file: .env
+
+    name: borgdash-network    ports:
+
       - "3157:80"
     depends_on:
       - backend

@@ -42,13 +42,13 @@ app.include_router(archives.router, prefix="/api/archives", tags=["archives"])
 app.include_router(stats.router, prefix="/api/stats", tags=["statistics"])
 
 
-@app.get("/")
-async def root():
-    """Health check endpoint."""
+@app.get("/api")
+async def api_root():
+    """API health check endpoint."""
     return {"message": "BorgDash API is running", "version": "0.1.0"}
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     """Detailed health check."""
     return {
@@ -56,6 +56,31 @@ async def health_check():
         "api_version": "0.1.0",
         "borg_available": True  # TODO: Check if borg is available
     }
+
+
+# Mount static files - Frontend will be served from here
+# This must be last so API routes take precedence
+frontend_dist = "/app/frontend/dist"
+if os.path.exists(frontend_dist):
+    from fastapi.responses import FileResponse
+    
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        """Serve frontend static files and handle SPA routing."""
+        file_path = os.path.join(frontend_dist, full_path)
+        
+        # If file exists, serve it
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        
+        # For SPA routing, serve index.html for non-API routes
+        if not full_path.startswith("api/"):
+            index_path = os.path.join(frontend_dist, "index.html")
+            if os.path.isfile(index_path):
+                return FileResponse(index_path)
+        
+        # If nothing found, 404
+        raise HTTPException(status_code=404, detail="Not found")
 
 
 if __name__ == "__main__":

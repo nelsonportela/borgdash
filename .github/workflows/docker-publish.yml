@@ -1,4 +1,4 @@
-name: Build and Publish Docker Images
+name: Build and Publish Docker Image
 
 on:
   push:
@@ -21,16 +21,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push backend image
+      - name: Build and push combined image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: .
+          file: ./Dockerfile
           push: true
-          tags: fuguone/borgdash-backend:${{ github.ref_name }},fuguone/borgdash-backend:latest
-
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          push: true
-          tags: fuguone/borgdash-frontend:${{ github.ref_name }},fuguone/borgdash-frontend:latest
+          tags: fuguone/borgdash:${{ github.ref_name }},fuguone/borgdash:latest
+          platforms: linux/amd64,linux/arm64
