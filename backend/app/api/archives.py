@@ -10,6 +10,7 @@ from ..services.borg_service import BorgService
 router = APIRouter()
 
 
+@router.get("", response_model=List[ArchiveResponse])
 @router.get("/", response_model=List[ArchiveResponse])
 async def list_archives(
     repository_id: int = None,
@@ -27,6 +28,7 @@ async def list_archives(
     return archives
 
 
+@router.post("", response_model=ArchiveResponse)
 @router.post("/", response_model=ArchiveResponse)
 async def create_archive(
     archive: ArchiveCreate,

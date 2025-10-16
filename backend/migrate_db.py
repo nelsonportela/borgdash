@@ -15,8 +15,8 @@ def migrate_database(db_path: str = "/app/data/borgdash.db"):
     
     # Check if database exists
     if not os.path.exists(db_path):
-        print(f"Database not found at {db_path}")
-        return False
+        print(f"Database not found at {db_path} - will be created on first run")
+        return True  # This is OK, database will be created by init_db()
     
     try:
         conn = sqlite3.connect(db_path)

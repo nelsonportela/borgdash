@@ -20,12 +20,8 @@ RUN apt-get update && apt-get install -y \
     sshpass \
     curl \
     wget \
+    borgbackup \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Borg Backup
-RUN wget https://github.com/borgbackup/borg/releases/download/1.4.0/borg-linux64 \
-    && mv borg-linux64 /usr/local/bin/borg \
-    && chmod +x /usr/local/bin/borg
 
 # Create user
 RUN useradd -m -u 1000 borgdash
@@ -37,6 +33,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend application
 COPY backend/app ./app
+COPY backend/migrate_db.py .
 
 # Copy frontend build from previous stage
 COPY --from=frontend-builder /app/dist ./frontend/dist
@@ -55,5 +52,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || exit 1
 
-# Run application
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run database migration and start application
+CMD ["sh", "-c", "python migrate_db.py && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"]

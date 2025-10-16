@@ -8,7 +8,7 @@ import {
 } from '../types/api';
 
 export class RepositoryService {
-  private static readonly BASE_PATH = '/api/repositories';
+  private static readonly BASE_PATH = '/repositories';
 
   // Get all repositories
   static async getRepositories(): Promise<Repository[]> {

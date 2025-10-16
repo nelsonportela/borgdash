@@ -12,6 +12,7 @@ from ..services.borg_service import BorgService
 router = APIRouter()
 
 
+@router.get("", response_model=List[RepositoryResponse])
 @router.get("/", response_model=List[RepositoryResponse])
 async def list_repositories(db: Session = Depends(get_db)):
     """List all repositories."""
@@ -19,6 +20,7 @@ async def list_repositories(db: Session = Depends(get_db)):
     return repositories
 
 
+@router.post("", response_model=RepositoryResponse)
 @router.post("/", response_model=RepositoryResponse)
 async def create_repository(
     repository: RepositoryCreate,

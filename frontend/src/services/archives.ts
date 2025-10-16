@@ -6,7 +6,7 @@ import {
 } from '../types/api';
 
 export class ArchiveService {
-  private static readonly BASE_PATH = '/api/archives';
+  private static readonly BASE_PATH = '/archives';
 
   // Get all archives (optionally filtered by repository)
   static async getArchives(repositoryId?: number, limit = 100, offset = 0): Promise<Archive[]> {

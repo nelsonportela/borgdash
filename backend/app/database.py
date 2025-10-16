@@ -21,6 +21,10 @@ async def init_db():
     from .models.repository import Repository
     from .models.archive import Archive
     
+    # Ensure data directory exists
+    db_dir = os.path.dirname(settings.DATABASE_URL.replace("sqlite:///", "").replace("./", "/app/"))
+    os.makedirs(db_dir, exist_ok=True)
+    
     # Create tables
     Base.metadata.create_all(bind=engine)
     
