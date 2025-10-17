@@ -1,4 +1,4 @@
 # API package
-from . import repositories, archives, stats
+from . import repositories, archives, stats, backup_jobs
 
-__all__ = ["repositories", "archives", "stats"]
+__all__ = ["repositories", "archives", "stats", "backup_jobs"]

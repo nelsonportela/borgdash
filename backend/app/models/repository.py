@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
+from sqlalchemy.orm import relationship
 from pydantic import BaseModel, HttpUrl
 from datetime import datetime
 from typing import Optional, Dict, Any, List
@@ -44,7 +45,8 @@ class Repository(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships (will be set up when Archive model is imported)
+    # Relationships
+    backup_jobs = relationship("BackupJob", back_populates="repository")
     
     @property
     def config_dict(self) -> Dict[str, Any]:

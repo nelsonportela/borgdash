@@ -8,7 +8,7 @@ services:
       - DATABASE_URL=sqlite:///./data/borgdash.db
       - ENVIRONMENT=production
     volumes:
-      - borgdash-dev-data:/app/data
+      - borgdash-data:/app/data
       - ~/.ssh/id_rsa:/app/host_keys/ssh_key:ro   # Mount SSH key from host
       - ~/data:/source:ro                         # Mount source data from host
       - /etc/localtime:/etc/localtime:ro

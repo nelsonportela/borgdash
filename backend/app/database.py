@@ -38,3 +38,12 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def get_db_sync():
+    """Get a synchronous database session (for scheduler)."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

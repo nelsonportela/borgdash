@@ -18,7 +18,6 @@ class BorgService:
     
     def __init__(self, db: Optional[Session] = None):
         self.borg_binary = settings.BORG_BINARY
-        self.ssh_key_dir = settings.SSH_KEY_DIR
         self.db = db
     
     def _get_db_session(self) -> Session:

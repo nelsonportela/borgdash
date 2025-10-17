@@ -8,6 +8,7 @@ export function Layout({ children }: PropsWithChildren) {
     { name: 'Dashboard', href: '/', icon: '🏠' },
     { name: 'Repositories', href: '/repositories', icon: '📦' },
     { name: 'Archives', href: '/archives', icon: '📁' },
+    { name: 'Backup Jobs', href: '/backup-jobs', icon: '⏰' },
   ];
 
   const isActive = (path: string) => {

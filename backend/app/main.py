@@ -5,9 +5,10 @@ import uvicorn
 import os
 from contextlib import asynccontextmanager
 
-from .api import repositories, archives, stats
+from .api import repositories, archives, stats, backup_jobs
 from .database import init_db
 from .config import settings
+from .services.scheduler_service import init_scheduler
 
 
 @asynccontextmanager
@@ -15,15 +16,21 @@ async def lifespan(app: FastAPI):
     """Initialize database and cleanup on startup/shutdown."""
     # Startup
     await init_db()
+    
+    # Initialize and start the scheduler
+    scheduler = init_scheduler(settings.DATABASE_URL)
+    scheduler.start()
+    
     yield
+    
     # Shutdown
-    pass
+    scheduler.shutdown()
 
 
 app = FastAPI(
     title="BorgDash API",
     description="A modern web UI for Borg Backup management",
-    version="0.2.1",
+    version="0.3.0",
     lifespan=lifespan,
     redirect_slashes=True  # Automatically redirect trailing slashes
 )
@@ -41,6 +48,7 @@ app.add_middleware(
 app.include_router(repositories.router, prefix="/api/repositories", tags=["repositories"])
 app.include_router(archives.router, prefix="/api/archives", tags=["archives"])
 app.include_router(stats.router, prefix="/api/stats", tags=["statistics"])
+app.include_router(backup_jobs.router, prefix="/api/backup-jobs", tags=["backup-jobs"])
 
 
 @app.get("/api")

@@ -3,6 +3,7 @@ import { Layout } from './components/Layout'
 import { DashboardPage } from './pages/DashboardPage'
 import { RepositoriesPage } from './pages/RepositoriesPage'
 import { ArchivesPage } from './pages/ArchivesPage'
+import BackupJobsPage from './pages/BackupJobsPage'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/repositories" element={<RepositoriesPage />} />
         <Route path="/archives" element={<ArchivesPage />} />
         <Route path="/repositories/:id/archives" element={<ArchivesPage />} />
+        <Route path="/backup-jobs" element={<BackupJobsPage />} />
       </Routes>
     </Layout>
   )
