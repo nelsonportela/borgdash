@@ -11,7 +11,8 @@ services:
       - ENVIRONMENT=development
     volumes:
       - borgdash-dev-data:/app/data
-      - borgdash-dev-keys:/app/host_keys
+      - ~/.ssh/id_rsa:/app/host_keys/ssh_key:ro
+      - ~/data:/source:ro
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     healthcheck:
@@ -23,8 +24,6 @@ services:
 
 volumes:
   borgdash-dev-data:
-    driver: local
-  borgdash-dev-keys:
     driver: local
 
 networks:

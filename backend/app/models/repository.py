@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
 from pydantic import BaseModel, HttpUrl
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from enum import Enum
 import json
 
@@ -115,3 +115,22 @@ class RepositoryStatus(BaseModel):
     status: str  # "connected", "unreachable", "error"
     message: Optional[str] = None
     last_checked: datetime
+
+
+class RepositoryImport(BaseModel):
+    """Model for importing an existing repository."""
+    name: str  # Friendly name for the repository
+    url: str  # Repository location (path or SSH URL)
+    repo_type: RepositoryType
+    passphrase: Optional[str] = None  # Repository passphrase if encrypted
+    ssh_key_path: Optional[str] = None  # For SSH repositories
+    ssh_password: Optional[str] = None  # For SSH password auth
+    ssh_auth_method: Optional[str] = "key"  # "key" or "password"
+    remote_path: str = "borg-1.4"  # Remote borg binary path
+
+
+class RepositoryImportResponse(BaseModel):
+    """Response after importing a repository."""
+    repository: RepositoryResponse
+    archives_imported: int
+    archives: List[str]  # List of archive names imported

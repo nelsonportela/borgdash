@@ -49,6 +49,11 @@ export class ArchiveService {
   static async getArchiveProgress(id: number): Promise<any> {
     return api.get<any>(`${ArchiveService.BASE_PATH}/${id}/progress`);
   }
+
+  // Refresh archive statistics from Borg
+  static async refreshArchiveStats(id: number): Promise<Archive> {
+    return api.post<Archive>(`${ArchiveService.BASE_PATH}/${id}/refresh`);
+  }
 }
 
 // React Query hooks
@@ -116,5 +121,19 @@ export const useArchiveProgress = (id: number, enabled = false) => {
     enabled: enabled && !!id,
     refetchInterval: 2000, // Poll every 2 seconds
     refetchIntervalInBackground: false,
+  });
+};
+
+// Refresh archive stats
+export const useRefreshArchiveStats = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ArchiveService.refreshArchiveStats,
+    onSuccess: (_data, archiveId) => {
+      // Invalidate both archives list and specific archive
+      queryClient.invalidateQueries({ queryKey: ['archives'] });
+      queryClient.invalidateQueries({ queryKey: ['archive', archiveId] });
+    },
   });
 };

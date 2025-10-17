@@ -28,9 +28,6 @@ async def init_db():
     # Create tables
     Base.metadata.create_all(bind=engine)
     
-    # Create SSH key directory if it doesn't exist
-    os.makedirs(settings.SSH_KEY_DIR, exist_ok=True)
-    
     print("Database initialized successfully")
 
 

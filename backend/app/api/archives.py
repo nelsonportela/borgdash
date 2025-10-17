@@ -103,6 +103,66 @@ async def get_archive_info(archive_id: int, db: Session = Depends(get_db)):
     return info
 
 
+@router.post("/{archive_id}/refresh")
+async def refresh_archive_stats(archive_id: int, db: Session = Depends(get_db)):
+    """Fetch and update archive statistics from Borg."""
+    archive = db.query(Archive).filter(Archive.id == archive_id).first()
+    if not archive:
+        raise HTTPException(status_code=404, detail="Archive not found")
+    
+    borg_service = BorgService(db)
+    result = await borg_service.get_archive_info(archive)
+    
+    if not result.get("success"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to fetch archive info: {result.get('stderr', 'Unknown error')}"
+        )
+    
+    # Extract stats from the borg info result
+    archive_data = result.get("data", {})
+    archives = archive_data.get("archives", [])
+    
+    if archives:
+        stats = archives[0].get("stats", {})
+        
+        # Update archive with detailed statistics
+        archive.original_size = stats.get("original_size")
+        archive.compressed_size = stats.get("compressed_size")
+        archive.deduplicated_size = stats.get("deduplicated_size")
+        archive.nfiles = stats.get("nfiles")
+        
+        # Update additional metadata if available
+        if "start" in archives[0]:
+            from datetime import datetime
+            try:
+                archive.start_time = datetime.fromisoformat(archives[0]["start"].replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                pass
+        
+        if "end" in archives[0]:
+            from datetime import datetime
+            try:
+                archive.end_time = datetime.fromisoformat(archives[0]["end"].replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                pass
+        
+        if "duration" in archives[0]:
+            # Convert duration to integer (seconds), Borg returns float
+            archive.duration = int(archives[0]["duration"])
+        
+        if "hostname" in archives[0]:
+            archive.hostname = archives[0]["hostname"]
+        
+        if "username" in archives[0]:
+            archive.username = archives[0]["username"]
+        
+        db.commit()
+        db.refresh(archive)
+    
+    return archive
+
+
 @router.get("/{archive_id}/list")
 async def list_archive_contents(
     archive_id: int,

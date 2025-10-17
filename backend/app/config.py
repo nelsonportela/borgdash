@@ -32,8 +32,8 @@ class Settings(BaseSettings):
     BORG_REMOTE_PATH: str = os.getenv("BORG_REMOTE_PATH", "borg-1.4")
     
     # SSH Configuration
-    SSH_KEY_DIR: str = os.getenv("SSH_KEY_DIR", "/app/ssh_keys")
-    SSH_KNOWN_HOSTS: str = os.getenv("SSH_KNOWN_HOSTS", "/app/ssh_keys/known_hosts")
+    # SSH keys should be mounted from host to /app/host_keys/ (see docker-compose)
+    # Default SSH key path: /app/host_keys/ssh_key
     
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")

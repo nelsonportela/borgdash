@@ -46,6 +46,23 @@ export interface RepositoryStatus {
   last_checked: string;
 }
 
+export interface RepositoryImport {
+  name: string;
+  url: string;
+  repo_type: 'local' | 'ssh';
+  passphrase?: string;
+  ssh_key_path?: string;
+  ssh_password?: string;
+  ssh_auth_method?: 'key' | 'password';
+  remote_path?: string;
+}
+
+export interface RepositoryImportResponse {
+  repository: Repository;
+  archives_imported: number;
+  archives: string[];
+}
+
 // Archive Types
 export interface Archive {
   id: number;

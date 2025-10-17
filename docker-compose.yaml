@@ -3,13 +3,14 @@ services:
     image: fuguone/borgdash:latest
     container_name: borgdash
     ports:
-      - "3157:8000"  # Single port for both frontend and API
+      - 3157:8000
     environment:
       - DATABASE_URL=sqlite:///./data/borgdash.db
       - ENVIRONMENT=production
     volumes:
-      - borgdash-data:/app/data
-      - borgdash-keys:/app/host_keys
+      - borgdash-dev-data:/app/data
+      - ~/.ssh/id_rsa:/app/host_keys/ssh_key:ro   # Mount SSH key from host
+      - ~/data:/source:ro                         # Mount source data from host
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     healthcheck:
@@ -21,8 +22,6 @@ services:
 
 volumes:
   borgdash-data:
-    driver: local
-  borgdash-keys:
     driver: local
 
 networks:

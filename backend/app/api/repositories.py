@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import datetime
 
 from ..database import get_db
 from ..models.repository import (
     Repository, RepositoryCreate, RepositoryUpdate, 
-    RepositoryResponse, RepositoryStatus
+    RepositoryResponse, RepositoryStatus,
+    RepositoryImport, RepositoryImportResponse
 )
+from ..models.archive import Archive, ArchiveResponse
 from ..services.borg_service import BorgService
 
 router = APIRouter()
@@ -124,3 +127,137 @@ async def get_repository_info(repository_id: int, db: Session = Depends(get_db))
     borg_service = BorgService(db)
     info = await borg_service.get_repository_info(repository)
     return info
+
+
+@router.post("/import", response_model=RepositoryImportResponse)
+@router.post("/import/", response_model=RepositoryImportResponse)
+async def import_repository(
+    import_data: RepositoryImport,
+    db: Session = Depends(get_db)
+):
+    """Import an existing Borg repository and all its archives."""
+    
+    # Check if repository with same name already exists
+    existing_name = db.query(Repository).filter(Repository.name == import_data.name).first()
+    if existing_name:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Repository with name '{import_data.name}' already exists"
+        )
+    
+    # Check if repository with same URL already exists
+    existing_url = db.query(Repository).filter(Repository.url == import_data.url).first()
+    if existing_url:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Repository at '{import_data.url}' is already registered as '{existing_url.name}'"
+        )
+    
+    # Validate repository by running 'borg info'
+    borg_service = BorgService(db)
+    
+    # Create a temporary repository object for validation
+    temp_repo = Repository(
+        name=import_data.name,
+        url=import_data.url,
+        repo_type=import_data.repo_type.value,
+        passphrase=import_data.passphrase,
+        ssh_key_path=import_data.ssh_key_path,
+        ssh_password=import_data.ssh_password,
+        ssh_auth_method=import_data.ssh_auth_method,
+        remote_path=import_data.remote_path
+    )
+    
+    try:
+        # Validate and get repository info
+        repo_info = await borg_service.get_repository_info(temp_repo)
+        
+        # Extract encryption mode from borg info
+        encryption_mode = repo_info.get("encryption", {}).get("mode")
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to access repository: {str(e)}"
+        )
+    
+    # Create the repository in database
+    db_repository = Repository(
+        name=import_data.name,
+        url=import_data.url,
+        repo_type=import_data.repo_type.value,
+        encryption_mode=encryption_mode,
+        ssh_key_path=import_data.ssh_key_path,
+        ssh_password=import_data.ssh_password,
+        ssh_auth_method=import_data.ssh_auth_method,
+        remote_path=import_data.remote_path,
+        passphrase=import_data.passphrase,
+        status="initialized"
+    )
+    
+    db.add(db_repository)
+    db.commit()
+    db.refresh(db_repository)
+    
+    # Import all archives
+    try:
+        archives_result = await borg_service.list_archives(db_repository)
+        
+        if not archives_result.get("success"):
+            raise Exception(archives_result.get("stderr", "Failed to list archives"))
+        
+        # Get the archives list from the JSON data
+        archives_data = archives_result.get("data", {})
+        archives_list = archives_data.get("archives", [])
+        
+        archive_names = []
+        
+        for archive_info in archives_list:
+            # archive_info is a dict with keys: name, id, start, time, etc.
+            archive_name = archive_info.get("name")
+            
+            if not archive_name:
+                continue
+                
+            # Check if archive already exists
+            existing_archive = db.query(Archive).filter(
+                Archive.repository_id == db_repository.id,
+                Archive.name == archive_name
+            ).first()
+            
+            if not existing_archive:
+                # Parse the datetime string from Borg
+                start_time_str = archive_info.get("start")
+                created_at = None
+                if start_time_str:
+                    try:
+                        # Parse ISO format datetime: 2025-10-16T16:41:34.000000
+                        created_at = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+                    except (ValueError, AttributeError):
+                        # If parsing fails, leave as None
+                        pass
+                
+                # Create archive record
+                archive = Archive(
+                    repository_id=db_repository.id,
+                    name=archive_name,
+                    borg_id=archive_info.get("id"),
+                    created_at=created_at,
+                    comment=archive_info.get("comment", "")
+                )
+                db.add(archive)
+                archive_names.append(archive.name)
+        
+        db.commit()
+        
+    except Exception as e:
+        # If archive import fails, we still keep the repository
+        # but log the error
+        print(f"Warning: Failed to import some archives: {str(e)}")
+        archive_names = []
+    
+    return RepositoryImportResponse(
+        repository=RepositoryResponse.from_orm(db_repository),
+        archives_imported=len(archive_names),
+        archives=archive_names
+    )

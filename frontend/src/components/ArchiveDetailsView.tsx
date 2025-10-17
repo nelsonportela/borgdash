@@ -1,14 +1,21 @@
 import { Archive } from '../types/api';
-import { useArchiveContents } from '../services/archives';
+import { useArchiveContents, useRefreshArchiveStats, useArchive } from '../services/archives';
 import { FileTreeBrowser } from './FileTreeBrowser';
+import { useState } from 'react';
 
 interface ArchiveDetailsViewProps {
   archive: Archive;
   onClose: () => void;
 }
 
-export function ArchiveDetailsView({ archive, onClose }: ArchiveDetailsViewProps) {
-  const { data: contents, isLoading, error } = useArchiveContents(archive.id, '');
+export function ArchiveDetailsView({ archive: initialArchive, onClose }: ArchiveDetailsViewProps) {
+  const { data: contents, isLoading, error } = useArchiveContents(initialArchive.id, '');
+  const { data: freshArchive } = useArchive(initialArchive.id);
+  const refreshStatsMutation = useRefreshArchiveStats();
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
+  
+  // Use fresh archive data from the query, fallback to initial prop
+  const archive = freshArchive || initialArchive;
   
   // Ensure contents is always an array to prevent map errors
   const fileList = Array.isArray(contents) ? contents : [];
@@ -37,23 +44,70 @@ export function ArchiveDetailsView({ archive, onClose }: ArchiveDetailsViewProps
     return `${Math.round(ratio)}%`;
   };
 
+  const handleRefreshStats = async () => {
+    try {
+      await refreshStatsMutation.mutateAsync(archive.id);
+      setRefreshSuccess(true);
+      setTimeout(() => setRefreshSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to refresh stats:', err);
+    }
+  };
 
+  const hasStats = archive.original_size || archive.compressed_size || archive.deduplicated_size;
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
-          <div>
+          <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900">Archive Details</h3>
             <p className="text-sm text-gray-600 mt-1">{archive.name}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-2">
+            {!hasStats && (
+              <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded mr-2">
+                No stats available
+              </div>
+            )}
+            <button
+              onClick={handleRefreshStats}
+              disabled={refreshStatsMutation.isPending}
+              className="px-3 py-1 text-sm bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              title="Fetch detailed statistics from Borg"
+            >
+              {refreshStatsMutation.isPending ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Loading...
+                </>
+              ) : refreshSuccess ? (
+                <>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Updated!
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh Stats
+                </>
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Archive Statistics */}

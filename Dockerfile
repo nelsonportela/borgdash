@@ -39,7 +39,7 @@ COPY backend/migrate_db.py .
 COPY --from=frontend-builder /app/dist ./frontend/dist
 
 # Create necessary directories
-RUN mkdir -p /app/data /app/ssh_keys /app/host_keys \
+RUN mkdir -p /app/data /app/host_keys \
     && chown -R borgdash:borgdash /app
 
 # Switch to non-root user

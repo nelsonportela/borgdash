@@ -4,7 +4,9 @@ import {
   Repository, 
   RepositoryCreate, 
   RepositoryUpdate, 
-  RepositoryStatus 
+  RepositoryStatus,
+  RepositoryImport,
+  RepositoryImportResponse
 } from '../types/api';
 
 export class RepositoryService {
@@ -43,6 +45,11 @@ export class RepositoryService {
   // Get repository info
   static async getRepositoryInfo(id: number): Promise<any> {
     return api.get<any>(`${RepositoryService.BASE_PATH}/${id}/info`);
+  }
+
+  // Import an existing repository
+  static async importRepository(data: RepositoryImport): Promise<RepositoryImportResponse> {
+    return api.post<RepositoryImportResponse>(`${RepositoryService.BASE_PATH}/import`, data);
   }
 }
 
@@ -111,6 +118,17 @@ export const useTestRepositoryConnection = () => {
   
   return useMutation({
     mutationFn: RepositoryService.testConnection,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['repositories'] });
+    },
+  });
+};
+
+export const useImportRepository = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: RepositoryService.importRepository,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['repositories'] });
     },

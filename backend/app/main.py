@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="BorgDash API",
     description="A modern web UI for Borg Backup management",
-    version="0.1.1",
+    version="0.2.0",
     lifespan=lifespan,
     redirect_slashes=True  # Automatically redirect trailing slashes
 )
@@ -46,7 +46,7 @@ app.include_router(stats.router, prefix="/api/stats", tags=["statistics"])
 @app.get("/api")
 async def api_root():
     """API health check endpoint."""
-    return {"message": "BorgDash API is running", "version": "0.1.1"}
+    return {"message": "BorgDash API is running", "version": "0.2.0"}
 
 
 @app.get("/api/health")
@@ -54,7 +54,7 @@ async def health_check():
     """Detailed health check."""
     return {
         "status": "healthy",
-        "api_version": "0.1.1",
+        "api_version": "0.2.0",
         "borg_available": True  # TODO: Check if borg is available
     }
 
