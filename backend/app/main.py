@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="BorgDash API",
     description="A modern web UI for Borg Backup management",
-    version="0.2.0",
+    version="0.2.1",
     lifespan=lifespan,
     redirect_slashes=True  # Automatically redirect trailing slashes
 )
